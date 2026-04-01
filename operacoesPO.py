@@ -52,9 +52,49 @@ def matrizInversa(A : np.ndarray):
     #print(matrizAumentada)
     return matrizAumentada[0:n, n:n*2]
 
-A = np.array([[1,2,3],
-     [4,7,6],
-     [7,8,9]])
+def mult(A : np.ndarray, B : np.ndarray, localErro = ""): #sempre que chamar uma mult, colocar o local onde ela esta sendo chamada para facilitar debuging
+    linhasA, colunasA = A.shape
+    linhasB, colunasB = B.shape
+    
+    if colunasA == linhasB:
+        resultado = np.zeros((linhasA, colunasB))
+        
+        for i in range(linhasA):
+            for j in range(colunasB):
+                valor = 0
+                for k in range(colunasA): #como o num de colunas de A == num de linhas de B, podemos usar k para iterar pelas colunas e linhas de respectivamente A e B
+                    valor += A[i][k] * B[k][j]
+                resultado[i][j] = valor
+        return resultado
+    else:
+        raise Exception(f" {localErro}: Matrizes {A} e {B} não permite multiplicaçao")
+    
+def pivoteamento_parcial(matrizA : np.ndarray, matrizB : np.ndarray):
+    n = len(matrizA)
+    x = np.zeros(n)
+    matrizAumentada = np.column_stack((matrizA, matrizB)).astype(float)
+    
+    for i in range(n):
+        linha_pivo = i
+        valor_max = abs(matrizAumentada[i][i])
+        for j in range(i+1, n):
+            if abs(matrizAumentada[j][i]) > valor_max:
+                linha_pivo = j
+                valor_max = abs(matrizAumentada[j][i])
+        if linha_pivo != i:
+            matrizAumentada[[i, linha_pivo]] = matrizAumentada[[linha_pivo, i]]
+        pivo = matrizAumentada[i][i]
+        if abs(pivo) < 1e-10:
+            raise Exception("Divisao por 0 - sem solução única")
+        for j in range(i+1, n):
+            multiplicador = matrizAumentada[j][i] / pivo
+            matrizAumentada[j] -= multiplicador * matrizAumentada[i]
 
-print(matrizInversa(A))
-print(np.linalg.inv(A))
+    for i in range(n-1, -1, -1):
+        soma = matrizAumentada[i][-1]
+        for j in range(i+1, n):
+            soma -= matrizAumentada[i][j] * x[j]
+        x[i] = soma / matrizAumentada[i][i]
+
+    return x
+    
