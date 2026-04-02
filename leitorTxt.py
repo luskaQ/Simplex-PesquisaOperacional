@@ -17,10 +17,18 @@ class Leitor:
         self._numRestricoes = 0
         self._operadores = []
         self._varDict = dict()
-        self.matrizBruta = np.empty((0, 0)) 
-        #self.lerArquivo()
-        #self.linhasParaListas()
-        #self.criaTuplas()
+        self.matrizBruta = np.empty((0, 0))
+
+        self.lerArquivo()
+        self.linhasParaListas()
+        self.criaTuplas()
+        self.encontraOperadores()
+        self.encontraMatrizAlvo()
+        self.tuplasParaDicionario()
+        self.dicionariosParaMatrizes()
+        self.adicionaVarFolga()
+        self.separaMatrizes()
+        self.maxOrMin()
         
         
     def lerArquivo(self):
@@ -181,16 +189,7 @@ class Leitor:
     
     
 leitor = Leitor("teste.txt")
-leitor.lerArquivo()
-leitor.linhasParaListas()
-leitor.criaTuplas()
-leitor.encontraOperadores()
-leitor.encontraMatrizAlvo()
-leitor.tuplasParaDicionario()
-leitor.dicionariosParaMatrizes()
-leitor.adicionaVarFolga()
-leitor.separaMatrizes()
-leitor.maxOrMin()
+
 
 
     
