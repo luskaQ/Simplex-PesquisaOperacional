@@ -5,9 +5,9 @@ class Leitor:
     def __init__(self, caminhoArquivo ):
         self.__caminhoArquivo = caminhoArquivo
         
-        self._custo = np.array #A de Ax da funcao de custo
-        self._limitacoes = np.ndarray #
-        self._matrizAlvo = np.ndarray # matriz b
+        self._funcaoObjetivo = np.empty((0, 0))  #A de Ax da funcao de custo
+        self._limitacoes = np.empty((0, 0))  #
+        self._matrizAlvo = np.empty((0, 0)) # matriz b
         
         self._dadosBrutos = []
         self._dadosSemOperadores = []
@@ -17,6 +17,7 @@ class Leitor:
         self._numRestricoes = 0
         self._operadores = []
         self._varDict = dict()
+        self.matrizBruta = np.empty((0, 0)) 
         #self.lerArquivo()
         #self.linhasParaListas()
         #self.criaTuplas()
@@ -30,15 +31,17 @@ class Leitor:
     def encontraOperadores(self):
         self._operadores = []
         for linha in self._dadosBrutos:
-            posMaior = linha.find(">")
-            if(posMaior != -1):
+            if ">=" in linha:
+                self._operadores.append(">=")
+            elif "<=" in linha:
+                self._operadores.append("<=")
+            elif ">" in linha:
                 self._operadores.append(">")
-            else:
-                posMenor = linha.find("<")
-                if(posMenor != -1):
-                    self._operadores.append("<")
-                else:
-                    self._operadores.append("=")
+            elif "<" in linha:
+                self._operadores.append("<")
+            elif "=" in linha:
+                self._operadores.append("=")
+        self._operadores.pop(0) # primeira linha sempre vai ser o igual do f = ....
         print(self._operadores)
     
     def encontraMatrizAlvo(self): #b
@@ -51,6 +54,8 @@ class Leitor:
                     valor = linha[pos + len(op):].strip()
                     vetorBSemFormat.append(valor)
                     break
+        vetorBSemFormat.pop(0)
+        self._matrizAlvo = np.array(vetorBSemFormat, dtype=float)
         print(vetorBSemFormat)
         
     def removeOperadores(self):
@@ -112,24 +117,67 @@ class Leitor:
                         break
                 lista.append(tupla)
             self._listaTuplas.append(lista)
+            idxLinha += 1
         print(self._listaTuplas)
         
     def tuplasParaDicionario(self):
         dicionario = dict()
+        self._varDict = {}
         for i in self._listaTuplas:
             for j in i:
-                if j[1] in dicionario:
-                    dicionario[j[1]].append(j[0])
+                if re.sub(r'\D', '', j[2]) in dicionario:
+                    dicionario[re.sub(r'\D', '', j[2])].append((j[0], j[1])) #(idx, valor)
                 else:
-                    dicionario[j[1]] = [j[0]]
+                    dicionario[re.sub(r'\D', '', j[2])] = [(j[0], j[1])]
         print(dicionario)
         self._varDict = dicionario
-
+        print(self.matrizBruta)
+#chaves do dicionario são as colunas, o primerio valor da tupla sao as linhas
     
     def dicionariosParaMatrizes(self):
+        numChaves = 0
+        self.matrizBruta = np.empty((0, 0))
+        numChaves = len(self._varDict)
+        self.matrizBruta= np.zeros((len(self._operadores)+1, numChaves))
+        print(self.matrizBruta)
         for chave in self._varDict:
             for i in self._varDict[chave]:
-                
+                self.matrizBruta[int(i[0])][int(chave)-1] = float(eval(i[1]))
+        print(self.matrizBruta)
+    
+    def adicionaVarFolga(self):
+        tamanhoLinhas = self.matrizBruta.shape[0]
+        
+        for idx, i in enumerate(self._operadores):
+            aux = np.zeros((tamanhoLinhas, 1))
+            
+            if i in ("<=", "<"):
+                aux[idx+1] = 1
+            elif i in (">=", ">"):
+                aux[idx+1] = -1
+            else:
+                continue
+            
+            self.matrizBruta = np.column_stack((self.matrizBruta.astype(float), aux.astype(float)))
+            
+        print(self.matrizBruta)
+        
+    def separaMatrizes(self):
+            self._limitacoes = self.matrizBruta[1:, :]
+            
+            self._funcaoObjetivo = self.matrizBruta[0, :]
+            
+            print("f objetivo (c): \n", self._funcaoObjetivo)
+            print("Restrições (A):\n", self._limitacoes)
+            print("Alvo (b):\n", self._matrizAlvo)    
+    
+    def maxOrMin(self):
+        if("max" in self._dadosBrutos[0].lower()):
+            self._isMax = True
+        else:
+            self._isMax = False
+        print(self._isMax)
+            
     
     
 leitor = Leitor("teste.txt")
@@ -140,6 +188,9 @@ leitor.encontraOperadores()
 leitor.encontraMatrizAlvo()
 leitor.tuplasParaDicionario()
 leitor.dicionariosParaMatrizes()
+leitor.adicionaVarFolga()
+leitor.separaMatrizes()
+leitor.maxOrMin()
 
 
     
