@@ -1,14 +1,23 @@
 import numpy as np
 import re
+import random
+import operacoesPO
 #o leitor espera coeficiente * variável, e a função objetivo define todas as variáveis do problema (numero total)
 class Leitor:
     def __init__(self, caminhoArquivo ):
         self.__caminhoArquivo = caminhoArquivo
         
-        self._funcaoObjetivo = np.empty((0, 0))  #A de Ax da funcao de custo
-        self._limitacoes = np.empty((0, 0))  #
-        self._matrizAlvo = np.empty((0, 0)) # matriz b
+        self._c= np.empty((0, 0))  #A de Ax da funcao de custo
+        self._A= np.empty((0, 0))  #
+        self._b = np.empty((0, 0)) # matriz b
         
+        self._matrizBasica = np.empty((0,0))
+        self._indicesMatrizBasica = []
+        
+        self._matrizNaoBasica = np.empty((0,0))
+        self._indicesMatrizNaoBasica = []
+
+
         self._dadosBrutos = []
         self._dadosSemOperadores = []
         self._listasLinhas = []
@@ -18,6 +27,8 @@ class Leitor:
         self._operadores = []
         self._varDict = dict()
         self.matrizBruta = np.empty((0, 0))
+        self._numLinhasA = 0
+        self.numColunasA = 0
 
         self.lerArquivo()
         self.linhasParaListas()
@@ -29,6 +40,7 @@ class Leitor:
         self.adicionaVarFolga()
         self.separaMatrizes()
         self.maxOrMin()
+        self.defineMatrizBasicaENaoBasica()
         
         
     def lerArquivo(self):
@@ -50,7 +62,7 @@ class Leitor:
             elif "=" in linha:
                 self._operadores.append("=")
         self._operadores.pop(0) # primeira linha sempre vai ser o igual do f = ....
-        print(self._operadores)
+      #  print(self._operadores)
     
     def encontraMatrizAlvo(self): #b
         vetorBSemFormat = []
@@ -63,8 +75,8 @@ class Leitor:
                     vetorBSemFormat.append(valor)
                     break
         vetorBSemFormat.pop(0)
-        self._matrizAlvo = np.array(vetorBSemFormat, dtype=float)
-        print(vetorBSemFormat)
+        self._b = np.array(vetorBSemFormat, dtype=float)
+       # print(vetorBSemFormat)
         
     def removeOperadores(self):
         self._dadosSemOperadores = []
@@ -126,7 +138,7 @@ class Leitor:
                 lista.append(tupla)
             self._listaTuplas.append(lista)
             idxLinha += 1
-        print(self._listaTuplas)
+       # print(self._listaTuplas)
         
     def tuplasParaDicionario(self):
         dicionario = dict()
@@ -137,9 +149,9 @@ class Leitor:
                     dicionario[re.sub(r'\D', '', j[2])].append((j[0], j[1])) #(idx, valor)
                 else:
                     dicionario[re.sub(r'\D', '', j[2])] = [(j[0], j[1])]
-        print(dicionario)
+       # print(dicionario)
         self._varDict = dicionario
-        print(self.matrizBruta)
+       # print(self.matrizBruta)
 #chaves do dicionario são as colunas, o primerio valor da tupla sao as linhas
     
     def dicionariosParaMatrizes(self):
@@ -147,11 +159,11 @@ class Leitor:
         self.matrizBruta = np.empty((0, 0))
         numChaves = len(self._varDict)
         self.matrizBruta= np.zeros((len(self._operadores)+1, numChaves))
-        print(self.matrizBruta)
+        #print(self.matrizBruta)
         for chave in self._varDict:
             for i in self._varDict[chave]:
                 self.matrizBruta[int(i[0])][int(chave)-1] = float(eval(i[1]))
-        print(self.matrizBruta)
+      #  print(self.matrizBruta)
     
     def adicionaVarFolga(self):
         tamanhoLinhas = self.matrizBruta.shape[0]
@@ -168,27 +180,70 @@ class Leitor:
             
             self.matrizBruta = np.column_stack((self.matrizBruta.astype(float), aux.astype(float)))
             
-        print(self.matrizBruta)
+      #  print(self.matrizBruta)
         
     def separaMatrizes(self):
-            self._limitacoes = self.matrizBruta[1:, :]
+            self._A= self.matrizBruta[1:, :]
+            self._c= self.matrizBruta[0, :]
+            self.numLinhasA = self._A.shape[0]
+            self.numColunasA = self._A.shape[1]
             
-            self._funcaoObjetivo = self.matrizBruta[0, :]
-            
-            print("f objetivo (c): \n", self._funcaoObjetivo)
-            print("Restrições (A):\n", self._limitacoes)
-            print("Alvo (b):\n", self._matrizAlvo)    
+            if self._isMax:
+                self._c= self._c* -1
+            print("f objetivo (c): \n", self._c)
+            print("Restrições (A):\n", self._A)
+            print("Alvo (b):\n", self._b)    
     
     def maxOrMin(self):
         if("max" in self._dadosBrutos[0].lower()):
             self._isMax = True
         else:
             self._isMax = False
-        print(self._isMax)
+       # print(self._isMax)
+       
+    def defineMatrizBasicaENaoBasica(self):
+        numVariaveis = self.numColunasA
+        tamMatrizBasica = self.numLinhasA
+        self._matrizBasica = np.ndarray((tamMatrizBasica,0))
+        
+        while(True):
+            self._matrizBasica = np.ndarray((tamMatrizBasica,0))
+            self._indicesMatrizBasica = random.sample(range(numVariaveis), tamMatrizBasica)
+            for i in self._indicesMatrizBasica:
+                self._matrizBasica = np.column_stack((self._matrizBasica, self._A[:, i].reshape(-1, 1)))
+            if( abs(operacoesPO.detLaplace(self._matrizBasica)) < 1e-9):
+                continue
+            else:
+                break
+            
+        self._matrizNaoBasica = np.ndarray((tamMatrizBasica, 0))    
+        self._indicesMatrizNaoBasica = list(set(range(numVariaveis)) - set(self._indicesMatrizBasica))
+        for i in self._indicesMatrizNaoBasica:
+                self._matrizNaoBasica = np.column_stack((self._matrizNaoBasica, self._A[:, i].reshape(-1, 1)))
+        
+        print('\n', self._indicesMatrizBasica)
+        print(self._matrizBasica ,'\n')
+        print('\n', self._indicesMatrizNaoBasica, '\n')
+        print(self._matrizNaoBasica ,'\n')
+                
+                
+    def get_A(self):
+        return self._A
+    def get_b(self):
+        return self._b
+    def get_c(self):
+        return self._c
+    def get_MatrizBasica(self):
+        return self._matrizBasica
+    def get_IndicesBasicos(self):
+        return self._indicesMatrizBasica
+    def get_MatrizNaoBasica(self):
+        return self._matrizNaoBasica
+    def get_IndicesNaoBasicos(self):
+        return self._indicesMatrizNaoBasica
             
     
     
-leitor = Leitor("teste.txt")
 
 
 
