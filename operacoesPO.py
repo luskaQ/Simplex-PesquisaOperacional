@@ -53,8 +53,8 @@ def matrizInversa(A : np.ndarray):
     return matrizAumentada[0:n, n:n*2]
 
 def mult(A : np.ndarray, B : np.ndarray, localErro = ""): #sempre que chamar uma mult, colocar o local onde ela esta sendo chamada para facilitar debuging
-    linhasA, colunasA = A.shape
-    linhasB, colunasB = B.shape
+    linhasA, colunasA = A.shape[0], A.shape[1]
+    linhasB, colunasB = B.shape[0], B.shape[1]
     
     if colunasA == linhasB:
         resultado = np.zeros((linhasA, colunasB))
@@ -65,9 +65,9 @@ def mult(A : np.ndarray, B : np.ndarray, localErro = ""): #sempre que chamar uma
                 for k in range(colunasA): #como o num de colunas de A == num de linhas de B, podemos usar k para iterar pelas colunas e linhas de respectivamente A e B
                     valor += A[i][k] * B[k][j]
                 resultado[i][j] = valor
-        return resultado
+        return resultado.squeeze()
     else:
-        raise Exception(f" {localErro}: Matrizes {A} e {B} não permite multiplicaçao")
+        raise Exception(f" {localErro}: Matrizes {A.shape} e {B.shape} não permite multiplicaçao")
     
 def pivoteamento_parcial(matrizA : np.ndarray, matrizB : np.ndarray):
     n = len(matrizA)

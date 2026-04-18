@@ -208,7 +208,7 @@ class Leitor:
         
         while(True):
             self._matrizBasica = np.ndarray((tamMatrizBasica,0))
-            self._indicesMatrizBasica = random.sample(range(numVariaveis), tamMatrizBasica)
+            self._indicesMatrizBasica = random.sample(range(numVariaveis), tamMatrizBasica) #faltar fazer o verificador de matrizes com det ja calculado
             for i in self._indicesMatrizBasica:
                 self._matrizBasica = np.column_stack((self._matrizBasica, self._A[:, i].reshape(-1, 1)))
             if( abs(operacoesPO.detLaplace(self._matrizBasica)) < 1e-9):
