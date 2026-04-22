@@ -9,29 +9,32 @@ class SimplexFaseII:
     def __init__(self, matrizBasica, indicesMatrizBasica, matrizNaoBasica, indicesMatrizNaoBasica, A, b, c):
         self._x_hat_B = []
         self.x_hat_N = []
-        self._A = A
-        self._b = b
-        self._c = c
-        self._matrizBasica = matrizBasica
-        self._indicesMatrizBasica = indicesMatrizBasica #m é quantidade de variaveis na matriz basica, logo n - m = quantidade de var matriz naoBasica
-        self._matrizNaoBasica = matrizNaoBasica
-        self._indiceMatrizNaoBasica = indicesMatrizNaoBasica 
+        self._A = np.array(A, dtype=float)
+        self._b = np.array(b, dtype=float)
+        self._c = np.array(c, dtype=float)
+        self._matrizBasica = np.array(matrizBasica, dtype=float)
+        self._indicesMatrizBasica = list(indicesMatrizBasica)
+        self._matrizNaoBasica = np.array(matrizNaoBasica, dtype=float)
+        self._indiceMatrizNaoBasica = list(indicesMatrizNaoBasica)
         self._n = len(indicesMatrizNaoBasica)
         self._lambda = []
-        self._custos_relativos = [] #custos da matriz nao basica (C_N)
+        self._custos_relativos = []
         self._k = -1
         self._y = -1
         self._epilson = np.inf
         self._indice_saindo_t = -1
 
-        c = np.array(c)
-        self.__c_B = c[indicesMatrizBasica]
-        self.__c_N = c[indicesMatrizNaoBasica]
+        self.__c_B = self._c[self._indicesMatrizBasica]
+        self.__c_N = self._c[self._indiceMatrizNaoBasica]
         
 
         
     def passo1(self):
         matrizBasica_inversa = np.array(operacoesPO.matrizInversa(self._matrizBasica))
+        
+        #VERIFICAR SE ALGUM X É MENOR QUE 0, SE SIM, VOLTAR PARA A RANDOMIZACAO DE MATRIZ BASICA, GUARDAR PERMUTACOES QUE JA FORAM
+        #VER O TOTAL DE POSSIBILIDADES, SE TODAS FOREM USADAS E NENHUMA FOR VALIDA, O PROBLEMA N TEM SOLUCAO
+        
         self._x_hat_B = operacoesPO.mult(matrizBasica_inversa, self._b, "Fase II, passo1")
         self.x_hat_N = np.zeros(self._n)
         
@@ -114,10 +117,15 @@ class SimplexFaseII:
                 raise Exception("Problema Ilimitado!")
             self.passo6()
         
-        return self._x_hat_B, self._indicesMatrizBasica
         
-        
-A = np.array([
+        tam_x = len(self._x_hat_B) + len(self.x_hat_N)
+        meusX = np.zeros(tam_x)
+        for i in range(len(self._x_hat_B)):
+            meusX[self._indicesMatrizBasica[i]] = self._x_hat_B[i]
+            
+        return meusX
+  
+"""A = np.array([
     [ 1,  1, 1, 0, 0],
     [ 1, -1, 0, 1, 0],
     [-1,  1, 0, 0, 1]], dtype=float)
@@ -133,10 +141,11 @@ indicesB = [2, 3, 4]
 indicesN = [0, 1]
 
 simplex = SimplexFaseII(B, indicesB, N, indicesN, A, b, c)
-x_B, indices = simplex.loopSimplexII()
+x = simplex.loopSimplexII()
+print("Valores x: ", x)
+print("Valor de f(x) = ", operacoesPO.mult(x.reshape(1, len(x)), c.reshape(len(x),1)))"""      
+        
 
-print("Variáveis básicas (índices):", indices)
-print("Valores x_B:", x_B)
         
         
         

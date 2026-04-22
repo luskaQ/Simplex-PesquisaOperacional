@@ -18,7 +18,7 @@ def detLaplace(A : np.ndarray): #n dimensioal array
 def matrizIdentidade(n : int):
     identidade = np.zeros((n,n))
     for i in range(n):
-        identidade[i][i] = 1
+        identidade[i][i] = 1.0
     return identidade
 
 def matrizInversa(A : np.ndarray):
@@ -53,6 +53,11 @@ def matrizInversa(A : np.ndarray):
     return matrizAumentada[0:n, n:n*2]
 
 def mult(A : np.ndarray, B : np.ndarray, localErro = ""): #sempre que chamar uma mult, colocar o local onde ela esta sendo chamada para facilitar debuging
+    if(A.ndim == 1):
+        A=A.reshape(1, -1)
+    if(B.ndim == 1):
+        B=B.reshape(-1, 1)
+    
     linhasA, colunasA = A.shape[0], A.shape[1]
     linhasB, colunasB = B.shape[0], B.shape[1]
     

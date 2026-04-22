@@ -38,8 +38,8 @@ class Leitor:
         self.tuplasParaDicionario()
         self.dicionariosParaMatrizes()
         self.adicionaVarFolga()
-        self.separaMatrizes()
         self.maxOrMin()
+        self.separaMatrizes()
         self.defineMatrizBasicaENaoBasica()
         
         
@@ -138,7 +138,8 @@ class Leitor:
                 lista.append(tupla)
             self._listaTuplas.append(lista)
             idxLinha += 1
-       # print(self._listaTuplas)
+        self._listaTuplas.pop(0) #primeira linha vai ser a do f(x)
+        #print(self._listaTuplas, "AAAAAAAAAAAAAAAAAAAAAAAA")
         
     def tuplasParaDicionario(self):
         dicionario = dict()
@@ -149,7 +150,7 @@ class Leitor:
                     dicionario[re.sub(r'\D', '', j[2])].append((j[0], j[1])) #(idx, valor)
                 else:
                     dicionario[re.sub(r'\D', '', j[2])] = [(j[0], j[1])]
-       # print(dicionario)
+        print(dicionario)
         self._varDict = dicionario
        # print(self.matrizBruta)
 #chaves do dicionario são as colunas, o primerio valor da tupla sao as linhas
@@ -225,6 +226,11 @@ class Leitor:
         print(self._matrizBasica ,'\n')
         print('\n', self._indicesMatrizNaoBasica, '\n')
         print(self._matrizNaoBasica ,'\n')
+        print('\n', '\n')
+        print('\n', self._A, '\n')
+        print('\n', self._b, '\n')
+        print('\n', self._c, '\n')
+
                 
                 
     def get_A(self):
