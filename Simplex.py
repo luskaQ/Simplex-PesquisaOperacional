@@ -1,12 +1,18 @@
 import operacoesPO
 import numpy as np
 
+class VerificaNecessidadeFaseI:
+    def __init__(self):
+        pass
+    
+    
+
 class SimplexFaseI:
     def __init__(self):
         pass
 
 class SimplexFaseII:
-    def __init__(self, matrizBasica, indicesMatrizBasica, matrizNaoBasica, indicesMatrizNaoBasica, A, b, c):
+    def __init__(self, matrizBasica, indicesMatrizBasica, matrizNaoBasica, indicesMatrizNaoBasica, A, b, c, geradorBases):
         self._x_hat_B = []
         self.x_hat_N = []
         self._A = np.array(A, dtype=float)
@@ -27,21 +33,45 @@ class SimplexFaseII:
         self.__c_B = self._c[self._indicesMatrizBasica]
         self.__c_N = self._c[self._indiceMatrizNaoBasica]
         
+        self._geradorBases = geradorBases
+        
 
         
     def passo1(self):
-        matrizBasica_inversa = np.array(operacoesPO.matrizInversa(self._matrizBasica))
+        while True:
+            matrizBasica_inversa = np.array(operacoesPO.matrizInversa(self._matrizBasica))
+            self._x_hat_B = operacoesPO.mult(matrizBasica_inversa, self._b, "Fase II, passo1")
+
+            if all(x >= -1e-8 for x in self._x_hat_B):
+                print("x_hat_B: ", self._x_hat_B, '\n')
+                break 
+            #numeros negativos, proxima base:
+            indices, matriz = next(self._geradorBases)  # Exception aqui = sem solução
+            self._indicesMatrizBasica = indices
+            self._matrizBasica = matriz
+            self._indiceMatrizNaoBasica = list(
+                set(range(len(self._c))) - set(indices)
+            )
+            self._matrizNaoBasica = np.ndarray((self._matrizBasica.shape[0], 0))
+            for i in self._indiceMatrizNaoBasica:
+                self._matrizNaoBasica = np.column_stack(
+                    (self._matrizNaoBasica, self._A[:, i].reshape(-1, 1))
+                )
+            self.__c_B = self._c[self._indicesMatrizBasica]
+            self.__c_N = self._c[self._indiceMatrizNaoBasica]
+
+        self.x_hat_N = np.zeros(self._n)
         
-        #VERIFICAR SE ALGUM X É MENOR QUE 0, SE SIM, VOLTAR PARA A RANDOMIZACAO DE MATRIZ BASICA, GUARDAR PERMUTACOES QUE JA FORAM
-        #VER O TOTAL DE POSSIBILIDADES, SE TODAS FOREM USADAS E NENHUMA FOR VALIDA, O PROBLEMA N TEM SOLUCAO
+            
         
-        self._x_hat_B = operacoesPO.mult(matrizBasica_inversa, self._b, "Fase II, passo1")
+        
         self.x_hat_N = np.zeros(self._n)
         
     def passo2(self):
         matrizBasica_inversa = np.array(operacoesPO.matrizInversa(self._matrizBasica))
         #passo 2.1
         self._lambda = operacoesPO.mult(self.__c_B.reshape(1, -1), matrizBasica_inversa, "faseII passo2.1")#reshape para fazer a matriz ficar com as dimensoes corretas para a multiplicacao, ja que a matriz era unidimensional antes
+       
         #isto é, antes era um vetor com tamanho m, agora estou transformando em uma matriz (1, m) 
         
         #reshape funciona assim: (1, -1) -> quero 1 linha e x colunas (o programa descobre quantas colunas automaticamente com o parametro -1)
@@ -107,7 +137,9 @@ class SimplexFaseII:
         
         
     def loopSimplexII(self):
+        i = 0
         while True:
+            print(f"Iteração {i}: \n" )
             self.passo1()  
             self.passo2()
             if self.passo3():
@@ -116,6 +148,7 @@ class SimplexFaseII:
             if not self.passo5():
                 raise Exception("Problema Ilimitado!")
             self.passo6()
+            i+= 1
         
         
         tam_x = len(self._x_hat_B) + len(self.x_hat_N)
@@ -125,25 +158,7 @@ class SimplexFaseII:
             
         return meusX
   
-"""A = np.array([
-    [ 1,  1, 1, 0, 0],
-    [ 1, -1, 0, 1, 0],
-    [-1,  1, 0, 0, 1]], dtype=float)
 
-b = np.array([[6], [4], [4]], dtype=float)
-
-c = np.array([-1, -2, 0, 0, 0], dtype=float)
-
-B = A[:, [2, 3, 4]].copy()
-N = A[:, [0, 1]].copy()
-
-indicesB = [2, 3, 4]
-indicesN = [0, 1]
-
-simplex = SimplexFaseII(B, indicesB, N, indicesN, A, b, c)
-x = simplex.loopSimplexII()
-print("Valores x: ", x)
-print("Valor de f(x) = ", operacoesPO.mult(x.reshape(1, len(x)), c.reshape(len(x),1)))"""      
         
 
         

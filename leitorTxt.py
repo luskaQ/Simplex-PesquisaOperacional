@@ -2,6 +2,7 @@ import numpy as np
 import re
 import random
 import operacoesPO
+import math
 #o leitor espera coeficiente * variável, e a função objetivo define todas as variáveis do problema (numero total)
 class Leitor:
     def __init__(self, caminhoArquivo ):
@@ -29,6 +30,9 @@ class Leitor:
         self.matrizBruta = np.empty((0, 0))
         self._numLinhasA = 0
         self.numColunasA = 0
+        
+        self._combinacoesJaCalculadas = []
+        self._possibilidades = -1
 
         self.lerArquivo()
         self.linhasParaListas()
@@ -82,23 +86,24 @@ class Leitor:
         self._dadosSemOperadores = []
         for i in self._dadosBrutos:
             linha = i
+            linha = linha.lower()
             linha = linha.replace(" ", "")
             linha = linha.replace("max", "")
             linha = linha.replace("min", "")
-            linha = linha.replace("f(x,y)=", "")
+            linha = re.sub(r'f\([^)]*\)=', '', linha)  # cobre f(x)=, f(x,y)=, etc.
             linha = linha.replace("f=", "")
             linha = linha.replace("z=", "")
             pos = linha.find("=")
-            if(pos != -1):
+            if pos != -1:
                 linha = linha.replace(linha[pos:], "")
             pos = linha.find(">")
-            if(pos != -1):
+            if pos != -1:
                 linha = linha.replace(linha[pos:], "")
             pos = linha.find("<")
-            if(pos != -1):
+            if pos != -1:
                 linha = linha.replace(linha[pos:], "")
             self._dadosSemOperadores.append(linha)
-        #print(self._dadosSemOperadores)
+      #  print(self._dadosSemOperadores)
     #essa funcao so pega a matriz A, nao pega a B
     def linhasParaListas(self):
         self.linhasListas = []
@@ -116,7 +121,7 @@ class Leitor:
                     aux +=" "
             #print(aux)
             self._listasLinhas.append(aux.split())
-        #print(self._listasLinhas)
+    #    print(self._listasLinhas)
         
     #leitor so vai funcionar para coeficiente * variavel -> nessa exata ordem
     def criaTuplas(self):
@@ -138,8 +143,8 @@ class Leitor:
                 lista.append(tupla)
             self._listaTuplas.append(lista)
             idxLinha += 1
-        self._listaTuplas.pop(0) #primeira linha vai ser a do f(x)
-        #print(self._listaTuplas, "AAAAAAAAAAAAAAAAAAAAAAAA")
+        #self._listaTuplas.pop(0) #primeira linha vai ser a do f(x)
+      #  print(self._listaTuplas, "AAAAAAAAAAAAAAAAAAAAAAAA")
         
     def tuplasParaDicionario(self):
         dicionario = dict()
@@ -150,7 +155,7 @@ class Leitor:
                     dicionario[re.sub(r'\D', '', j[2])].append((j[0], j[1])) #(idx, valor)
                 else:
                     dicionario[re.sub(r'\D', '', j[2])] = [(j[0], j[1])]
-        print(dicionario)
+        #print(dicionario)
         self._varDict = dicionario
        # print(self.matrizBruta)
 #chaves do dicionario são as colunas, o primerio valor da tupla sao as linhas
@@ -163,6 +168,8 @@ class Leitor:
         #print(self.matrizBruta)
         for chave in self._varDict:
             for i in self._varDict[chave]:
+             #   print(self._varDict)
+              #  print(chave)
                 self.matrizBruta[int(i[0])][int(chave)-1] = float(eval(i[1]))
       #  print(self.matrizBruta)
     
@@ -191,9 +198,9 @@ class Leitor:
             
             if self._isMax:
                 self._c= self._c* -1
-            print("f objetivo (c): \n", self._c)
-            print("Restrições (A):\n", self._A)
-            print("Alvo (b):\n", self._b)    
+           # print("f objetivo (c): \n", self._c)
+            #print("Restrições (A):\n", self._A)
+            #print("Alvo (b):\n", self._b)    
     
     def maxOrMin(self):
         if("max" in self._dadosBrutos[0].lower()):
@@ -202,36 +209,69 @@ class Leitor:
             self._isMax = False
        # print(self._isMax)
        
-    def defineMatrizBasicaENaoBasica(self):
+    def _geradorDeBasesFactiveis(self):
         numVariaveis = self.numColunasA
         tamMatrizBasica = self.numLinhasA
-        self._matrizBasica = np.ndarray((tamMatrizBasica,0))
-        
-        while(True):
-            self._matrizBasica = np.ndarray((tamMatrizBasica,0))
-            self._indicesMatrizBasica = random.sample(range(numVariaveis), tamMatrizBasica) #faltar fazer o verificador de matrizes com det ja calculado
-            for i in self._indicesMatrizBasica:
-                self._matrizBasica = np.column_stack((self._matrizBasica, self._A[:, i].reshape(-1, 1)))
-            if( abs(operacoesPO.detLaplace(self._matrizBasica)) < 1e-9):
-                continue
-            else:
-                break
-            
-        self._matrizNaoBasica = np.ndarray((tamMatrizBasica, 0))    
-        self._indicesMatrizNaoBasica = list(set(range(numVariaveis)) - set(self._indicesMatrizBasica))
-        for i in self._indicesMatrizNaoBasica:
-                self._matrizNaoBasica = np.column_stack((self._matrizNaoBasica, self._A[:, i].reshape(-1, 1)))
-        
-        print('\n', self._indicesMatrizBasica)
-        print(self._matrizBasica ,'\n')
-        print('\n', self._indicesMatrizNaoBasica, '\n')
-        print(self._matrizNaoBasica ,'\n')
-        print('\n', '\n')
-        print('\n', self._A, '\n')
-        print('\n', self._b, '\n')
-        print('\n', self._c, '\n')
+        permutacoesJaCalculadas = []
+        possibilidadesTotais = math.comb(numVariaveis, tamMatrizBasica)
 
-                
+        while len(permutacoesJaCalculadas) < possibilidadesTotais:
+            indices = random.sample(range(numVariaveis), tamMatrizBasica)
+            indicesOrdenados = tuple(sorted(indices))
+
+            if indicesOrdenados in permutacoesJaCalculadas:
+                continue
+
+            permutacoesJaCalculadas.append(indicesOrdenados)
+
+            matriz = np.ndarray((tamMatrizBasica, 0))
+            for i in indices:
+                matriz = np.column_stack((matriz, self._A[:, i].reshape(-1, 1)))
+
+            if abs(operacoesPO.detLaplace(matriz)) < 1e-9:
+                continue
+
+            yield indices, matriz  # yield pausa o codigo nesse ponto segurando os valores prontos para retorno, o next pode ser chamado para continuar a exec para uma proxima iteracao de matriz basica valida
+
+        raise Exception("Nenhuma base viável encontrada entre todas as combinações possíveis.")
+
+    def defineMatrizBasicaENaoBasica(self):
+        self._geradorBases = self._geradorDeBasesFactiveis()  # guarda o gerador
+        self._proximaBase()  # pega a primeira
+        self._A = self.corrigePrecisao(self._A)
+        self._b = self.corrigePrecisao(self._b)
+        self._c = self.corrigePrecisao(self._c)
+        self._matrizBasica = self.corrigePrecisao(self._matrizBasica)
+        self._matrizNaoBasica = self.corrigePrecisao(self._matrizNaoBasica)
+
+        #print('\n', self._indicesMatrizBasica)
+        #print(self._matrizBasica ,'\n')
+        #print('\n', self._indicesMatrizNaoBasica, '\n')
+        #print(self._matrizNaoBasica ,'\n')
+        print('\n')
+        print('\n', self._A)
+        print('\n', self._b)
+        print('\n', self._c)
+        print('\n', self._operadores)
+
+    def _proximaBase(self):
+        self._indicesMatrizBasica, self._matrizBasica = next(self._geradorBases)
+        self._indicesMatrizNaoBasica = list(set(range(self.numColunasA)) - set(self._indicesMatrizBasica))
+        self._matrizNaoBasica = np.ndarray((self.numLinhasA, 0))
+        for i in self._indicesMatrizNaoBasica:
+            self._matrizNaoBasica = np.column_stack(
+                (self._matrizNaoBasica, self._A[:, i].reshape(-1, 1))
+            )
+        
+    def get_geradorBases(self):
+        return self._geradorBases
+
+    def corrigePrecisao(self, matriz):
+        npMatriz = np.array(matriz, dtype=float)
+        npMatriz = np.where(np.abs(npMatriz) <= 1e-8, 0.0, npMatriz)
+        return npMatriz
+        
+        
                 
     def get_A(self):
         return self._A
@@ -247,7 +287,8 @@ class Leitor:
         return self._matrizNaoBasica
     def get_IndicesNaoBasicos(self):
         return self._indicesMatrizNaoBasica
-            
+    def get_Operadores(self):
+        return self._operadores
     
     
 
