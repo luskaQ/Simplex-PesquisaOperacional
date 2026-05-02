@@ -17,16 +17,26 @@ c = np.array(leitor.get_c())
 operadores = leitor.get_Operadores()
 geradorBases = leitor.get_geradorBases()
 
+verificador = Simplex.VerificaNecessidadeFaseI(A, b, operadores)
 
+A, b, operadores, faseI = verificador.verifica()
 
+if(faseI):
+    print("ENTREI NA FASE I")
+    simplexI = Simplex.SimplexFaseI(B, indicesB, N, indicesN, A, b, c, operadores)
+    A, b, c, indicesB, indicesN = simplexI.loopSimplexI()
+    A = leitor.corrigePrecisao(A)
+    B = A[:, indicesB]
+    print(N, indicesN)
+    N = A[:, indicesN]
 
+simplexII = Simplex.SimplexFaseII(B, indicesB, N, indicesN, A, b, c, geradorBases)
 
-simplex = Simplex.SimplexFaseII(B, indicesB, N, indicesN, A, b, c, geradorBases)
-x = simplex.loopSimplexII() 
+print(A,"\n", B)
 
+x = simplexII.loopSimplexII() 
 
-
-
+print("Valores de c (f objetivo): ", c, "\n")
 #print(x, c)
 print("Valores x: ", x)
 print("Valor de f(x) = ", operacoesPO.mult(x.reshape(1, len(x)), c.reshape(len(x),1)))

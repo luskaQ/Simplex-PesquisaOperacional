@@ -30,7 +30,7 @@ class Leitor:
         self.matrizBruta = np.empty((0, 0))
         self._numLinhasA = 0
         self.numColunasA = 0
-        
+        self._numVarOriginais = 0
         self._combinacoesJaCalculadas = []
         self._possibilidades = -1
 
@@ -175,7 +175,7 @@ class Leitor:
     
     def adicionaVarFolga(self):
         tamanhoLinhas = self.matrizBruta.shape[0]
-        
+        self._numVarOriginais = self.matrizBruta.shape[1]
         for idx, i in enumerate(self._operadores):
             aux = np.zeros((tamanhoLinhas, 1))
             
@@ -289,6 +289,8 @@ class Leitor:
         return self._indicesMatrizNaoBasica
     def get_Operadores(self):
         return self._operadores
+    def get_numVarOriginais(self):
+        return self._numVarOriginais
     
     
 
