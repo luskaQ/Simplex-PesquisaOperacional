@@ -36,7 +36,7 @@ print(A,"\n", B)
 
 x = simplexII.loopSimplexII() 
 
-print("Valores de c (f objetivo): ", c, "\n")
+print("Valores de c (f objetivo): ", c)
 #print(x, c)
 print("Valores x: ", x)
 print("Valor de f(x) = ", operacoesPO.mult(x.reshape(1, len(x)), c.reshape(len(x),1)))

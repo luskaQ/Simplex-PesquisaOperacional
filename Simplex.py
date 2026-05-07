@@ -1,3 +1,6 @@
+import math
+import random
+
 import operacoesPO
 import numpy as np
 
@@ -216,15 +219,18 @@ class SimplexFaseI:
 
 class SimplexFaseII:
     def __init__(self, matrizBasica, indicesMatrizBasica, matrizNaoBasica, indicesMatrizNaoBasica, A, b, c, geradorBases):
+        self._geradorBases = self._geradorDeBasesFactiveis()
+        
         self._x_hat_B = []
         self.x_hat_N = []
         self._A = np.array(A, dtype=float)
         self._b = np.array(b, dtype=float)
         self._c = np.array(c, dtype=float)
-        self._matrizBasica = np.array(matrizBasica, dtype=float)
-        self._indicesMatrizBasica = list(indicesMatrizBasica)
-        self._matrizNaoBasica = np.array(matrizNaoBasica, dtype=float)
-        self._indiceMatrizNaoBasica = list(indicesMatrizNaoBasica)
+
+        self._indicesMatrizBasica, self._matrizBasica = next(self._geradorBases)
+        self._indiceMatrizNaoBasica = sorted(
+        set(range(self._A.shape[1])) - set(self._indicesMatrizBasica))
+        self._matrizNaoBasica = self._A[:, self._indiceMatrizNaoBasica]
         self._n = len(indicesMatrizNaoBasica)
         self._lambda = []
         self._custos_relativos = []
@@ -236,8 +242,25 @@ class SimplexFaseII:
         self.__c_B = self._c[self._indicesMatrizBasica]
         self.__c_N = self._c[self._indiceMatrizNaoBasica]
         
-        self._geradorBases = geradorBases           
+    
+    def _geradorDeBasesFactiveis(self):
+            numVariaveis = self._A.shape[1]
+            tamMatrizBasica = self._A.shape[0]
+            permutacoesJaCalculadas = []
+            possibilidadesTotais = math.comb(numVariaveis, tamMatrizBasica)
 
+            while len(permutacoesJaCalculadas) < possibilidadesTotais:
+                indices = random.sample(range(numVariaveis), tamMatrizBasica)
+                indicesOrdenados = tuple(sorted(indices))
+                if indicesOrdenados in permutacoesJaCalculadas:
+                    continue
+                permutacoesJaCalculadas.append(indicesOrdenados)
+                matriz = self._A[:, indices]
+                if abs(operacoesPO.detLaplace(matriz)) < 1e-9:
+                    continue
+                yield indices, matriz
+
+            raise Exception("Nenhuma base viável encontrada.")
         
     def passo1(self):
         while True:
@@ -245,10 +268,11 @@ class SimplexFaseII:
             self._x_hat_B = operacoesPO.mult(matrizBasica_inversa, self._b, "Fase II, passo1")
 
             if all(x >= -1e-8 for x in self._x_hat_B):
-                print("x_hat_B: ", self._x_hat_B, '\n')
+                #print("x_hat_B: ", self._x_hat_B, '\n')
                 break 
             #numeros negativos, proxima base:
             indices, _ = next(self._geradorBases)  # Exception aqui = sem solução
+            print(f"Tentando base: {indices}, x_hat_B atual: {self._x_hat_B}")
             self._indicesMatrizBasica = indices
             self._matrizBasica = self._A[:, indices] # Nao preciso pegar a matriz do gerador (ela nao esta atualizada depois da alteracao do verificador), preciso apenas dos indices
             self._indiceMatrizNaoBasica = list(
