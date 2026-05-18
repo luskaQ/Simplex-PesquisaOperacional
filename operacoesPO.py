@@ -4,8 +4,8 @@ def detLaplace(A : np.ndarray): #n dimensioal array
     #return np.linalg.det(A)
     n = len(A)
     A = A.astype(dtype=np.float64)
-   # if (n == 3):
-   #     return detSarrus(A)
+    if (n == 3):
+        return detSarrus(A)
     if (n == 2):
         return (A[0][0] * A[1][1]) - (A[0][1] * A[1][0])
     if(n == 1):
