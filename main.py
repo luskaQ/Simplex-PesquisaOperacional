@@ -4,8 +4,7 @@ import leitorTxt
 import numpy as np
 
 leitor = leitorTxt.Leitor("teste.txt")
-
-input()
+print(" \n leitura feitas")
 print('\n')
 B = leitor.get_MatrizBasica()
 indicesB = leitor.get_IndicesBasicos()
@@ -33,7 +32,7 @@ if(faseI):
 simplexII = Simplex.SimplexFaseII(B, indicesB, N, indicesN, A, b, c, geradorBases)
 
 print(A,"\n", B)
-
+print("ENTREI NA FASE II")
 x = simplexII.loopSimplexII() 
 
 print("Valores de c (f objetivo): ", c)

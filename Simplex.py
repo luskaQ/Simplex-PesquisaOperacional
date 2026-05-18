@@ -72,28 +72,42 @@ class SimplexFaseI:
         self._indicesArtificiais = []
         numDeVarArtificiais = 0
         linha = 0
-        for i in self._operadores:
-            if i in [">=", ">", "="]:
+        num_maior_igual = self._operadores.count(">=") + self._operadores.count(">") + self._operadores.count("=")
+        self._casoA = True
+        if(num_maior_igual == 1):
+            self._casoA = False      
+        if(not self._casoA):     
+            pos = self._operadores.index(">=")
+            if(pos == -1):
+                pos = self._operadores.index(">")
+            if(pos == -1):
+                pos = self._operadores.index("=")
+            aux = np.zeros((self._A.shape[0], 1))
+            aux[pos] = 1.0
+            self._A_Artificial = np.column_stack((self._A_Artificial.astype(float), aux.astype(float)))
+            numDeVarArtificiais += 1
+            idx = self._A_Artificial.shape[1] - 1
+            self._indicesArtificiais.append(idx)        
+            self._c_Fase1 = np.append(self._c_Fase1, 1.0)              
+        else:
+            for i in self._operadores:
                 aux = np.zeros((self._A.shape[0], 1))
                 aux[linha] = 1.0
                 self._A_Artificial = np.column_stack((self._A_Artificial.astype(float), aux.astype(float)))
                 numDeVarArtificiais += 1
                 idx = self._A_Artificial.shape[1] - 1
                 self._indicesArtificiais.append(idx)
-                
-                self._c_Fase1 = np.append(self._c_Fase1, 1.0) 
-                
-            linha += 1
+                    
+                self._c_Fase1 = np.append(self._c_Fase1, 1.0)      
+                linha += 1
 
-        if(numDeVarArtificiais == self._A.shape[0]):
-            self._casoA = True 
             
     def montaBaseInicial(self):
         m, totalColunas = self._A_Artificial.shape
         self._matrizBasica = operacoesPO.matrizIdentidade(m)
         self._indicesMatrizBasica = []
         self._indicesMatrizNaoBasica = []
-        
+        #print(self._matrizBasica)
         for linha in range(m):
             vetor_identidade_esperado = self._matrizBasica[:, linha] #Ex: pegamos [1,0,0], depois
             
@@ -110,6 +124,9 @@ class SimplexFaseI:
         self._matrizNaoBasica = self._A_Artificial[:, self._indicesMatrizNaoBasica] #todas as linhas, mas apenas com as colunas da nao basica
         self.__c_B = self._c_Fase1[self._indicesMatrizBasica]
         self.__c_N = self._c_Fase1[self._indicesMatrizNaoBasica]
+        #input(print(self._matrizNaoBasica))
+
+
         
     def passo1(self):
         
@@ -209,6 +226,7 @@ class SimplexFaseI:
             # verificação pós-pivô: se ainda há artificiais, continua; senão encerra
             if not any(idx in self._indicesArtificiais for idx in self._indicesMatrizBasica):
                 break  # todas as artificiais saíram → Fase II
+            print(f"iteracao FASE I: {i}")
             i += 1
 
         colunasReais = [j for j in range(self._A_Artificial.shape[1])
@@ -371,6 +389,7 @@ class SimplexFaseII:
             if not self.passo5():
                 raise Exception("Problema Ilimitado!")
             self.passo6()
+            print(f"iteracao FASE II: {i}")
             i+= 1
         
         

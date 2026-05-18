@@ -1,19 +1,36 @@
 import numpy as np
 
 def detLaplace(A : np.ndarray): #n dimensioal array 
+    #return np.linalg.det(A)
     n = len(A)
     A = A.astype(dtype=np.float64)
-
+   # if (n == 3):
+   #     return detSarrus(A)
+    if (n == 2):
+        return (A[0][0] * A[1][1]) - (A[0][1] * A[1][0])
     if(n == 1):
         return A[0][0]
     resultado = 0.0
     for i in range(n):
-        iMaisJ = pow(-1, i+1) #estamos somando 1, que na matematica é a primeira coluna, mas em codigo é a coluna 0
+        iMaisJ = pow(-1, i) # i_matematica = i_codigo + 1 ; (i+1) + 1 = i + 2 = i (pois a base é -1 e j é fixo em 1)
         valor = A[i][0]
         novoA = np.delete(A, i, axis=0)
         novoA = np.delete(novoA, 0, axis=1)
+        
         resultado += iMaisJ * valor * detLaplace(novoA) #pense que cada submatriz possui um novo somatorio para o det daquela submatriz, que sera retornado para a chamada acima
     return resultado
+def detSarrus(matriz : np.ndarray):
+    positivos1 = (matriz[0][0]*matriz[1][1]*matriz[2][2])
+    positivos2 = (matriz[0][1]*matriz[1][2]*matriz[2][0])
+    positivos3 = (matriz[0][2]*matriz[1][0]*matriz[2][1])
+    positivos = positivos1 + positivos2 + positivos3
+
+    negativos1 =(matriz[0][2]*matriz[1][1]*matriz[2][0])*(-1)
+    negativos2 = (matriz[0][0]*matriz[1][2]*matriz[2][1])*(-1)
+    negativos3 = (matriz[0][1]*matriz[1][0]*matriz[2][2])*(-1)
+    negativos = negativos1 + negativos2 + negativos3
+    det = positivos + negativos
+    return det
 
 def matrizIdentidade(n : int):
     identidade = np.zeros((n,n))

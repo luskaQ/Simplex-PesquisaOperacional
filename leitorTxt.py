@@ -1,3 +1,5 @@
+import itertools
+
 import numpy as np
 import re
 import random
@@ -35,16 +37,27 @@ class Leitor:
         self._possibilidades = -1
 
         self.lerArquivo()
+        print('li arquivo')
         self.linhasParaListas()
+        print('fiz linha para lista')
         self.criaTuplas()
+        print('criei tuplas')
         self.encontraOperadores()
+        print('encontrei operadores')
         self.encontraMatrizAlvo()
+        print('encontrei matriz alvo')
         self.tuplasParaDicionario()
+        print('fiz tuplas pra dicionario')
         self.dicionariosParaMatrizes()
+        print('fiz dicionario para matriz')
         self.adicionaVarFolga()
+        print('adicionei folgas')
         self.maxOrMin()
+        print('vi se é max ou min')
         self.separaMatrizes()
+        print('separei as matrizes')
         self.defineMatrizBasicaENaoBasica()
+        print('defini matriz basica e nao basica')
         
         
     def lerArquivo(self):
@@ -212,26 +225,29 @@ class Leitor:
     def _geradorDeBasesFactiveis(self):
         numVariaveis = self.numColunasA
         tamMatrizBasica = self.numLinhasA
-        permutacoesJaCalculadas = []
-        possibilidadesTotais = math.comb(numVariaveis, tamMatrizBasica)
-
-        while len(permutacoesJaCalculadas) < possibilidadesTotais:
-            indices = random.sample(range(numVariaveis), tamMatrizBasica)
-            indicesOrdenados = tuple(sorted(indices))
-
-            if indicesOrdenados in permutacoesJaCalculadas:
-                continue
-
-            permutacoesJaCalculadas.append(indicesOrdenados)
-
+        
+        # usamos itertools para gerar as combinações de forma determinística e sem repetição
+        todas_combinacoes = itertools.combinations(range(numVariaveis), tamMatrizBasica)
+        count = 0
+        for indices in todas_combinacoes:
             matriz = np.ndarray((tamMatrizBasica, 0))
             for i in indices:
                 matriz = np.column_stack((matriz, self._A[:, i].reshape(-1, 1)))
-
-            if abs(operacoesPO.detLaplace(matriz)) < 1e-9:
+            try:
+                print(f'calculando det da matriz {count}')
+                print(matriz)
+                determinante = operacoesPO.detLaplace(matriz) # np.linalg.det(matriz)
+                print('='*60)
+                if abs(determinante) < 1e-9:
+                    
+                    count += 1
+                    continue
+            except:
+                count += 1
                 continue
 
-            yield indices, matriz  # yield pausa o codigo nesse ponto segurando os valores prontos para retorno, o next pode ser chamado para continuar a exec para uma proxima iteracao de matriz basica valida
+            yield list(indices), matriz
+            count +=  1
 
         raise Exception("Nenhuma base viável encontrada entre todas as combinações possíveis.")
 
