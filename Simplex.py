@@ -76,19 +76,21 @@ class SimplexFaseI:
         self._casoA = True
         if(num_maior_igual == 1):
             self._casoA = False      
-        if(not self._casoA):     
-            pos = self._operadores.index(">=")
-            if(pos == -1):
-                pos = self._operadores.index(">")
-            if(pos == -1):
-                pos = self._operadores.index("=")
-            aux = np.zeros((self._A.shape[0], 1))
-            aux[pos] = 1.0
-            self._A_Artificial = np.column_stack((self._A_Artificial.astype(float), aux.astype(float)))
-            numDeVarArtificiais += 1
-            idx = self._A_Artificial.shape[1] - 1
-            self._indicesArtificiais.append(idx)        
-            self._c_Fase1 = np.append(self._c_Fase1, 1.0)              
+        if(not self._casoA):
+            if (">=" in self._operadores or ">" in self._operadores or "=" in self._operadores):
+                if (">=" in self._operadores):   
+                    pos = self._operadores.index(">=")
+                if(">" in self._operadores):
+                    pos = self._operadores.index(">")
+                if("=" in self._operadores):
+                    pos = self._operadores.index("=")
+                aux = np.zeros((self._A.shape[0], 1))
+                aux[pos] = 1.0 # type: ignore
+                self._A_Artificial = np.column_stack((self._A_Artificial.astype(float), aux.astype(float)))
+                numDeVarArtificiais += 1
+                idx = self._A_Artificial.shape[1] - 1
+                self._indicesArtificiais.append(idx)        
+                self._c_Fase1 = np.append(self._c_Fase1, 1.0)              
         else:
             for i in self._operadores:
                 aux = np.zeros((self._A.shape[0], 1))
